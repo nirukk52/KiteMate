@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "session-start": {
+      "enabled": true,
+      "command": "echo '[KITEMATE] Session starting - Loading agent orchestrator and project context'"
+    },
+    "session-end": {
+      "enabled": true,
+      "command": "echo '[KITEMATE] Session ended - Remember to commit changes and run security audit before deploying'"
+    },
+    "user-prompt-submit": {
+      "enabled": false,
+      "command": "echo '[KITEMATE] Processing request...'"
+    }
+  },
+  "config": {
+    "tokenBudget": 200000,
+    "enableMetrics": true,
+    "logLevel": "info"
+  },
+  "notes": {
+    "session-start": "Runs when Claude Code session starts. Use to initialize context, load user preferences, or reminder messages.",
+    "session-end": "Runs when session ends. Use for cleanup reminders, backup prompts, or saving state.",
+    "user-prompt-submit": "Runs before processing each user prompt. Disabled by default to avoid noise.",
+    "tokenBudget": "Maximum tokens per session (200K for Claude Sonnet 4.5). Agents should respect this limit.",
+    "customization": "Edit commands to customize behavior. Can run bash scripts or npm scripts for complex hooks."
+  }
+}

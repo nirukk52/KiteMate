@@ -1,0 +1,53 @@
+{
+  "skill_name": "sveltekit-svelte5-tailwind-skill",
+  "version": "1.1.0",
+  "created_at": "2025-10-28",
+  "distribution": "author-only",
+  "scope": "integration",
+  "description": "Comprehensive integration skill for building sites with SvelteKit 2, Svelte 5, and Tailwind CSS v4. Enhanced with Svelte MCP integration for real-time documentation access.",
+  "version_targets": {
+    "sveltekit": "2.x",
+    "svelte": "5.x",
+    "tailwindcss": "4.x"
+  },
+  "mcp_integration": {
+    "svelte_mcp": {
+      "enabled": true,
+      "tools": [
+        "mcp_svelte_list-sections",
+        "mcp_svelte_get-documentation",
+        "mcp_svelte_playground-link",
+        "mcp_svelte_svelte-autofixer"
+      ],
+      "use_cases": [
+        "Latest official Svelte/SvelteKit documentation",
+        "Real-time API reference",
+        "Code validation and playground testing",
+        "Verifying current best practices"
+      ]
+    }
+  },
+  "collections": {
+    "references": {
+      "description": "Problem-focused curated guides",
+      "max_heading_depth": 2,
+      "indexed": false,
+      "file_count": 17
+    },
+    "docs": {
+      "description": "Comprehensive adapted documentation",
+      "max_heading_depth": 2,
+      "indexed": false,
+      "file_count": 7
+    },
+    "examples": {
+      "description": "Working integration examples",
+      "categories": ["basic", "forms", "styling", "ssr", "deployment"]
+    }
+  },
+  "metadata": {
+    "stage": "active",
+    "last_updated": "2025-11-16",
+    "changelog": "v1.1.0: Added Svelte MCP integration for real-time documentation access"
+  }
+}
