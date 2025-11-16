@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.encore/
+.svelte-kit/
+coverage/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+encore.gen/
+*.min.js
+*.config.js
+

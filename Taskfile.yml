@@ -1,0 +1,213 @@
+# Taskfile for KiteMate MVP
+# Install: brew install go-task/tap/go-task (macOS) or go install github.com/go-task/task/v3/cmd/task@latest
+# Usage: task <command>
+
+version: '3'
+
+vars:
+  BACKEND_DIR: backend
+  FRONTEND_DIR: frontend
+  ENCORE_CLIENT_OUTPUT: "{{.FRONTEND_DIR}}/src/lib/api/encore-client.ts"
+
+tasks:
+  # Development
+  dev:
+    desc: Start both backend and frontend in development mode
+    deps: [dev:backend, dev:frontend]
+
+  dev:backend:
+    desc: Start Encore backend in development mode
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore run
+
+  dev:frontend:
+    desc: Start SvelteKit frontend in development mode
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run dev
+
+  dev:watch:
+    desc: Start backend, frontend, and TypeScript client generation in watch mode
+    deps: [dev:backend, dev:frontend, gen:client:watch]
+
+  # Testing
+  test:
+    desc: Run all tests (backend + frontend)
+    cmds:
+      - task: test:backend
+      - task: test:frontend
+
+  test:backend:
+    desc: Run backend tests
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore test ./...
+
+  test:frontend:
+    desc: Run frontend tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run test
+
+  test:e2e:
+    desc: Run E2E tests with Playwright
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run test:e2e
+
+  test:unit:
+    desc: Run unit tests only
+    cmds:
+      - task: test:backend
+      - npm run test:unit --prefix {{.FRONTEND_DIR}}
+
+  # Code Generation
+  gen:client:
+    desc: Generate TypeScript client from Encore backend
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore gen client typescript --output=../{{.ENCORE_CLIENT_OUTPUT}}
+
+  gen:client:watch:
+    desc: Watch for backend changes and regenerate TypeScript client
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore gen client typescript --output=../{{.ENCORE_CLIENT_OUTPUT}} --watch
+
+  # Database
+  db:reset:
+    desc: Reset all databases to clean state
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore db reset
+
+  db:shell:
+    desc: "Open PostgreSQL shell for a database (usage: task db:shell -- <database-name>)"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore db shell {{.CLI_ARGS}}
+
+  db:proxy:
+    desc: Start database proxy for external connections
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore db proxy
+
+  db:conn-uri:
+    desc: "Get database connection URI (usage: task db:conn-uri -- <database-name>)"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore db conn-uri {{.CLI_ARGS}}
+
+  # Deployment
+  deploy:staging:
+    desc: Deploy to staging environment
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore deploy --env staging
+
+  deploy:prod:
+    desc: Deploy to production environment
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore deploy --env prod
+
+  # Build
+  build:
+    desc: Build both backend and frontend for production
+    cmds:
+      - task: build:frontend
+
+  build:frontend:
+    desc: Build frontend for production
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run build
+
+  # Linting & Formatting
+  lint:
+    desc: Lint all code
+    cmds:
+      - task: lint:backend
+      - task: lint:frontend
+
+  lint:backend:
+    desc: Lint backend code
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  lint:frontend:
+    desc: Lint frontend code
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  format:
+    desc: Format all code
+    cmds:
+      - task: format:backend
+      - task: format:frontend
+
+  format:backend:
+    desc: Format backend code
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - npm run format
+
+  format:frontend:
+    desc: Format frontend code
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format
+
+  # Setup
+  setup:
+    desc: Initial project setup (install dependencies)
+    cmds:
+      - task: setup:backend
+      - task: setup:frontend
+
+  setup:backend:
+    desc: Install backend dependencies
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - npm install
+
+  setup:frontend:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm install
+
+  # Clean
+  clean:
+    desc: Clean build artifacts and dependencies
+    cmds:
+      - rm -rf {{.BACKEND_DIR}}/node_modules
+      - rm -rf {{.FRONTEND_DIR}}/node_modules
+      - rm -rf {{.FRONTEND_DIR}}/.svelte-kit
+      - rm -rf {{.FRONTEND_DIR}}/build
+      - rm -rf {{.BACKEND_DIR}}/.encore
+
+  # Logs
+  logs:
+    desc: View Encore backend logs
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore logs
+
+  # Secrets Management
+  secret:set:
+    desc: "Set a secret (usage: task secret:set -- SECRET_NAME)"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore secret set {{.CLI_ARGS}}
+
+  secret:set:prod:
+    desc: "Set a production secret (usage: task secret:set:prod -- SECRET_NAME)"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - encore secret set --prod {{.CLI_ARGS}}
+

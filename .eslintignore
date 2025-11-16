@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+.encore/
+.svelte-kit/
+coverage/
+*.min.js
+*.config.js
+encore.gen/
+
