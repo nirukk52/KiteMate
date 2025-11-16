@@ -285,12 +285,98 @@ test('load portfolio data', async ({ page }) => {
 });
 ```
 
+## Critical Integration Gotchas
+
+### 1. Svelte 5 Runes Breaking Changes
+**Issue**: `<slot />` deprecated in Svelte 5  
+**Error**: `Using <slot> to render parent content is deprecated`  
+**Fix**: Use `{@render children()}` pattern:
+```svelte
+<script lang="ts">
+  let { children } = $props();
+</script>
+{@render children()}
+```
+
+### 2. Tailwind CSS Version Compatibility
+**Issue**: Tailwind v4 is beta and breaks with standard imports  
+**Error**: `Missing "./base" specifier in "tailwindcss" package`  
+**Fix**: Use Tailwind v3.4.1 and create `postcss.config.js`:
+```javascript
+// frontend/postcss.config.js (REQUIRED)
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+// frontend/src/app.css (correct syntax)
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### 3. Vite Config for Testing
+**Issue**: `test` property not recognized in Vite config  
+**Error**: `Property 'test' does not exist in type`  
+**Fix**: Import from `vitest/config`:
+```typescript
+import { defineConfig } from 'vitest/config';  // ← Not from 'vite'
+
+export default defineConfig({
+  plugins: [sveltekit()],
+  test: {
+    include: ['src/**/*.{test,spec}.{js,ts}']
+  }
+});
+```
+
+### 4. SvelteKit Path Aliases
+**Issue**: Custom path aliases in `tsconfig.json` interfere with SvelteKit  
+**Error**: Warning about baseUrl/paths conflicts  
+**Fix**: Remove custom paths from `tsconfig.json`, use `kit.alias` in `svelte.config.js` instead:
+```javascript
+// svelte.config.js
+export default {
+  kit: {
+    alias: {
+      $lib: './src/lib',
+      $components: './src/lib/components'
+    }
+  }
+};
+```
+
+### 5. Port Conflicts
+**Issue**: Vite dev server port already in use  
+**Behavior**: Vite automatically tries next available port (5173 → 5174)  
+**Fix**: Either kill process on port or let Vite choose alternate:
+```bash
+# Kill process on port
+lsof -ti:5173 | xargs kill -9
+
+# Or let Vite use 5174 (automatic)
+```
+
+### 6. TypeScript Client Generation Timing
+**Issue**: Frontend imports undefined types before client generated  
+**Error**: `Cannot find module '$lib/api/encore-client'`  
+**Fix**: Generate client before starting frontend:
+```bash
+# Generate once
+task gen:client
+
+# Or watch mode in separate terminal
+task gen:client:watch
+```
+
 ## Agent Workflow
 
 When working on full-stack features:
 1. Design API contract (Encore types)
 2. Implement backend endpoint (Encore agent)
-3. Generate TypeScript client
+3. **Generate TypeScript client** (`task gen:client`)
 4. Create SvelteKit route/component (Svelte agent)
 5. Integrate with type-safe API calls
 6. Handle errors gracefully

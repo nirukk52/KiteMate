@@ -581,6 +581,63 @@ encore deploy --env prod
 - [ ] Set CORS policy in `encore.app` for frontend domain only
 - [ ] Audit logs for all sensitive operations (payment, portfolio access)
 
+## Critical Setup Gotchas
+
+### 1. Encore App ID Must Match Cloud App
+**Issue**: Local `encore.app` must have exact cloud app ID  
+**Error**: `fetch secrets: http 404 Not Found: code=app_not_found`  
+**Fix**: Update `encore.app` with correct ID from Encore console
+```json
+{
+  "id": "your-app-id-here",  // Must match cloud app exactly
+  ...
+}
+```
+
+### 2. go.mod Required for TypeScript Apps
+**Issue**: Even TypeScript Encore apps need `go.mod`  
+**Error**: `open go.mod: no such file or directory`  
+**Fix**: Create minimal `go.mod` in backend root:
+```go
+module encore.app
+go 1.22.0
+require encore.dev v1.37.0
+```
+
+### 3. Auth Middleware Type Requirements
+**Issue**: Encore requires `userID` (capital ID) not `userId`  
+**Error**: `Property 'userID' is missing in type`  
+**Fix**: Auth data must use capital ID:
+```typescript
+interface EncoreAuthData {
+  userID: string;  // ← Must be capital ID
+  tier: UserTier;
+}
+```
+
+### 4. Package Imports for Auth
+**Issue**: `Header` import comes from `encore.dev/api` not `encore.dev/auth`  
+**Error**: `Module has no exported member 'Header'`  
+**Fix**:
+```typescript
+import { authHandler } from 'encore.dev/auth';
+import { Header } from 'encore.dev/api';  // ← Correct import
+```
+
+### 5. APIError Constructor Signature
+**Issue**: Third parameter must be Error type, not plain object  
+**Error**: Type mismatch for details parameter  
+**Fix**: Log details separately instead of passing to constructor:
+```typescript
+export function notFound(message: string, details?: Record<string, any>): APIError {
+  const error = new APIError(ErrCode.NotFound, message);
+  if (details) {
+    console.log('Not found details:', details);  // ← Log separately
+  }
+  return error;
+}
+```
+
 ## Common Patterns
 
 **Pagination:**
