@@ -1,0 +1,122 @@
+# KiteMate MVP - High-Level Plan
+
+## Architecture
+**Backend**: Encore.ts microservices → **Frontend**: SvelteKit 2 + Svelte 5 + Tailwind v4
+
+## Core Services (Encore.ts)
+1. **auth** - Zerodha OAuth, JWT sessions
+2. **portfolio** - Fetch/cache Zerodha data, CSV import
+3. **chat** - NLP query → widget generation (OpenAI/Anthropic)
+4. **widgets** - CRUD, visibility, fork logic
+5. **social** - Profiles, follows, discovery
+6. **subscriptions** - Razorpay/Stripe, query limits
+7. **jobs** - Daily portfolio refresh (cron)
+
+## Frontend Structure (SvelteKit)
+```
+routes/
+  ├─ (auth)/ login, callback
+  ├─ dashboard/ private widgets + drag-drop
+  ├─ chat/ NLP interface
+  ├─ [username]/ public profiles
+  └─ discover/ trending widgets
+```
+
+## Key Dependencies
+
+**Backend**:
+- `envalid` - env validation (Zerodha keys, API secrets)
+- `kiteconnect` - Official Zerodha SDK (npm)
+- `mcp.kite.trade` - Zerodha MCP server (dev/testing, optional LLM integration)
+- Encore primitives: sqldb, pubsub, cron, secrets, cache
+
+**Frontend**:
+- `@dnd-kit/*` - drag-and-drop dashboard
+- `layercake` - chart rendering
+- Generated Encore client (type-safe)
+
+**Tooling**:
+- `task` (Taskfile.yml) - dev orchestration, client gen, migrations
+
+## Code Flow
+
+### 1. Portfolio Sync
+```
+Zerodha OAuth → auth.handleCallback() 
+→ portfolio.syncPortfolio() → SQLDatabase 
+→ jobs.dailyRefresh (cron 6PM IST)
+```
+
+### 2. Chat Query
+```
+User → chat/+page.svelte → chat.queryPortfolio() 
+→ LLM (OpenAI) → widget config 
+→ widgets.create() → PubSub event 
+→ frontend SSR load → render
+```
+
+### 3. Widget Fork
+```
+Discover page → widgets.fork() 
+→ clone config + map to user's portfolio 
+→ pubsub: notify creator 
+→ dashboard update
+```
+
+## Database Schema (PostgreSQL via Encore sqldb)
+- `users` - auth, tier, query_count
+- `portfolios` - JSONB holdings cache
+- `widgets` - config, visibility, fork_count
+- `dashboards` - layout JSONB
+- `forks` - genealogy tracking
+
+## Environment (envalid)
+```ts
+const env = cleanEnv(process.env, {
+  ZERODHA_API_KEY: str(),
+  ZERODHA_API_SECRET: str(),
+  LLM_API_KEY: str(),
+  RAZORPAY_KEY_ID: str(),
+  DATABASE_URL: str(),
+  NODE_ENV: str({ choices: ['dev', 'staging', 'prod'] })
+});
+```
+
+## Taskfile.yml (go-task/task)
+```yaml
+tasks:
+  dev:
+    deps: [backend:run, frontend:run, gen:watch]
+  backend:run:
+    cmd: cd backend && encore run
+  frontend:run:
+    cmd: cd frontend && npm run dev
+  gen:watch:
+    cmd: encore gen client ts --output=frontend/src/lib/api/client.ts --watch
+  db:reset:
+    cmd: cd backend && encore db reset
+  deploy:staging:
+    cmd: encore deploy --env staging
+```
+
+## Critical Paths
+1. **Auth**: Zerodha OAuth → JWT → middleware
+2. **Data**: Zerodha API → cache → widgets
+3. **NLP**: Query → LLM → structured widget config
+4. **Social**: Public/private toggle → profile generation
+5. **Monetization**: Query counter → middleware → upgrade prompt
+
+## Open Source Stack
+- **Charts**: LayerCake, Chart.js
+- **DnD**: @dnd-kit/core, @dnd-kit/sortable
+- **Forms**: superforms + zod
+- **Auth**: jose (JWT)
+- **Payments**: razorpay/stripe SDK
+- **Task runner**: go-task/task
+- **Env**: envalid
+
+## Security
+- Encrypt Zerodha tokens at rest
+- Rate limit via Encore middleware
+- CORS: frontend domain only
+- Secrets via `encore secret set`

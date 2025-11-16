@@ -1,0 +1,17 @@
+{
+  "id": "{{APP_ID}}",
+  "global_cors": {
+    "allow_origins_with_credentials": [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      "https://{{APP_NAME}}.vercel.app",
+      "https://app.{{APP_NAME}}.com"
+    ],
+    "allow_headers": [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With"
+    ]
+  }
+}
+
